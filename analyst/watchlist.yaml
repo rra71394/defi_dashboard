@@ -1,0 +1,67 @@
+# Fund watchlist — EXAMPLE DATA.
+#
+# Every position below is illustrative, not a real holding. Replace with the
+# fund's actual positions before relying on `/analyst-brief` or
+# `/analyst-watchlist-check` for anything real. Kept deliberately small and
+# spread across all five mandate asset classes so the skills have a
+# realistic shape to run against.
+#
+# Schema:
+#   symbol             - ticker/pair as the relevant connector expects it
+#                         (see analyst/CONNECTORS.md for per-asset-class
+#                         connector routing)
+#   asset_class        - equity | option | future | crypto | metal
+#   name               - human-readable name
+#   note               - anything a human needs to know before treating
+#                         this row as tradeable (e.g. which venue/contract)
+#   alert_threshold_pct - move (absolute value, %) that triggers a flag in
+#                         /analyst-watchlist-check
+
+positions:
+  - symbol: NVDA
+    asset_class: equity
+    name: NVIDIA Corp
+    note: "EXAMPLE position — replace with a real holding"
+    alert_threshold_pct: 3
+
+  - symbol: SPY
+    asset_class: equity
+    name: S&P 500 ETF (index proxy)
+    note: "EXAMPLE — benchmark/macro proxy, not necessarily an actual position"
+    alert_threshold_pct: 2
+
+  - symbol: AAPL
+    asset_class: option
+    name: "EXAMPLE: AAPL calls — placeholder only"
+    note: "No real contract specified (strike/expiry). Alpha Vantage REALTIME_OPTIONS or HISTORICAL_OPTIONS is the only connector with options data — see CONNECTORS.md. Replace with a real contract before use."
+    alert_threshold_pct: 10
+
+  - symbol: WTI
+    asset_class: future
+    name: "EXAMPLE: WTI crude exposure"
+    note: "Alpha Vantage's WTI endpoint tracks the spot/near-curve price, not a specific dated futures contract (e.g. CLV26). Confirm venue and contract month before treating this as a real position. No connector here covers equity-index or rates futures — see CONNECTORS.md known gaps."
+    alert_threshold_pct: 4
+
+  - symbol: BTC/USD
+    asset_class: crypto
+    name: Bitcoin
+    note: "EXAMPLE position — replace with real holding and, if self-custodied, add the wallet address so /analyst-watchlist-check can cross-check via Blockscout"
+    alert_threshold_pct: 5
+
+  - symbol: ETH/USD
+    asset_class: crypto
+    name: Ethereum
+    note: "EXAMPLE position"
+    alert_threshold_pct: 5
+
+  - symbol: XAU
+    asset_class: metal
+    name: Gold spot
+    note: "EXAMPLE position"
+    alert_threshold_pct: 2
+
+  - symbol: XAG
+    asset_class: metal
+    name: Silver spot
+    note: "EXAMPLE position"
+    alert_threshold_pct: 3
