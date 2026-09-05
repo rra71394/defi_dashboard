@@ -44,6 +44,11 @@ Key tools: `get_quote`, `get_price` (single or comma-separated multi-symbol), `g
 
 **Gotcha hit in practice:** `get_market_movers` returned a hard error — *"available exclusively with pro or ultra or venture or enterprise plans"* — on the connected key. Confirm plan tier before building anything that depends on this endpoint (watchlist screening, gainers/losers scans); until upgraded, treat it as unavailable and use Bigdata.com's tearsheet or Alpha Vantage's `TOP_GAINERS_LOSERS` (also gated — see below) as a fallback, or fall back to per-symbol `get_quote` calls against a known list.
 
+**Second gotcha, hit live 2026-09-05:** the free tier caps at **8 API credits/minute**. A single batched `get_price` call across 15 crypto symbols burns 15 credits in one shot and gets rejected outright (*"You have run out of API credits for the current minute"*) — it does not partially succeed. **Fix, in priority order, until the plan is upgraded:**
+1. `bigdata_market_tearsheet` already returns "currencies incl. crypto" in its one call (see above) — check there FIRST for majors (BTC, ETH, and whatever else it carries) before ever calling Twelve Data for the same symbol. Don't spend a rate-limited call on a number you already have.
+2. For the rest of a crypto watchlist, batch in groups of **≤6 symbols** per `get_price` call, not one giant batch — 15 symbols in groups of 6/6/3 is 3 calls inside the per-minute cap instead of 1 call that fails outright.
+3. If still rate-limited mid-run, say so on that position's line (per step 7 of the watchlist-check playbook) rather than retrying in a hot loop — the cap resets on the next wall-clock minute, not on retry.
+
 ## Alpha Vantage
 
 The deepest single bench: technical indicators, commodities (WTI, Brent, natural gas, gold/silver spot and history, a broad all-commodities index), Treasury yield curve, Fed funds rate, crypto (daily/weekly/monthly series plus intraday), FX, full fundamentals (income statement, balance sheet, cash flow, earnings, splits, dividends), insider transactions, institutional holdings, **congressional trading disclosures**, news sentiment, top gainers/losers, and — uniquely — **options** (historical and realtime chains, options FMV, put/call ratios, volume/open-interest ratios). Also carries the core US macro releases: CPI, real GDP, unemployment, nonfarm payrolls, retail sales, durable goods.
@@ -51,6 +56,8 @@ The deepest single bench: technical indicators, commodities (WTI, Brent, natural
 This is the connector to reach for on **options** (nothing else covers it) and on **macro/rates context** (deepest bench of official series).
 
 **Gotcha hit in practice:** `TOP_GAINERS_LOSERS` returned a rate-limit error — *"not yet entitled to 15-minute delayed US market data... subscribe to any premium plan"* — on the free-tier key. Alpha Vantage's free tier is generally aggressive on rate limits; expect to hit this on other endpoints too under real usage volume (e.g. a watchlist-check loop hitting several symbols per pass). Budget for a paid key before relying on this connector for monitoring.
+
+**Second gotcha, hit live 2026-09-05:** the free key is capped at **25 requests/day, total, across every endpoint** — this is a hard daily ceiling, not a per-minute burst limit, so waiting a minute does not help once it's hit (confirmed: a single gold/silver spot check consumed the day's last credit mid-report). **Fix:** treat Alpha Vantage as **last resort, options and macro-series only** (the two things nothing else here covers) — `bigdata_market_tearsheet`'s one call already carries commodities (incl. metals) and crypto, so check there FIRST for anything Bigdata also covers, and never spend a daily-capped Alpha Vantage credit re-confirming a number the tearsheet already gave you.
 
 ## Blockscout
 
@@ -75,6 +82,24 @@ Also carries its own portfolio primitives — `create_watchlist`, `add_to_watchl
 Not a market-data connector — this is the tooling for maintaining *this repository* (the analyst's own codebase): PRs, CI, issues, branches. Don't route research questions here.
 
 ---
+
+## Adding a genuinely different data source (not just working around a rate limit)
+
+Confirmed live 2026-09-05 (debugging a separate Telegram-delivery issue): when this
+skill runs as a *scheduled cloud routine*, it executes in a sandboxed environment with
+a strict network allowlist — outbound calls only reach Anthropic's own APIs, package
+registries, and whichever MCP connectors are explicitly attached to that routine.
+A plain `curl` to any other domain (a free public API like CoinGecko, for instance)
+is rejected the same way `api.telegram.org` was (`connect_rejected`, org policy) —
+this is not Telegram-specific, it's how the sandbox's egress works in general.
+
+**Practical consequence:** a real 6th data source (not a workaround using the 5 above)
+has to be a proper MCP connector, added at https://claude.ai/customize/connectors —
+the founder's own action, same as connecting the original 5. It is not something a
+prompt or playbook change here can add on its own. Interactive (non-scheduled) Claude
+Code sessions on the trading_agent droplet do NOT have this restriction — a plain
+`requests` call to a free public API works fine there (see the meme-scanner project's
+`meme_scanner.py`/`meme_verify.py`, which do exactly this).
 
 ## What's not covered by anything
 
