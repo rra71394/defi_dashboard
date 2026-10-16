@@ -1,0 +1,29 @@
+# Global Markets Wrap — October 16, 2026
+
+**No report today. Research was stopped before it started: 3 of the 5 data connectors this briefing depends on are down, including the one that supplies both the cross-asset skeleton and all sourced news/narrative.**
+
+## What was checked
+
+Per the standing instruction to verify connector availability before doing any research (not fabricate from general knowledge if they're down), each of the 5 connectors in `analyst/CONNECTORS.md` was tested live in this session before any market data was pulled:
+
+| Connector | Status | Evidence |
+|---|---|---|
+| **Bigdata.com** | **Down** | `bigdata_market_tearsheet` returned: *"You've used up your credits. Go to [Bigdata](https://app.bigdata.com) to manage your account."* This is the playbook's required starting point (`PLAYBOOKS.md` §2.1 — "Start every briefing here") and the only connector with news/narrative search (`bigdata_search`). Nothing else in this toolkit does sourced "why did X move" retrieval. Same account-wide credit exhaustion flagged in every scheduled session since October 2 — unresolved across at least eleven trading-day sessions (Oct 2, 5, 6, 7, 8, 9, 12, 13, 14, 15, and today). |
+| **Twelve Data** | **Down** | MCP server tools are not loaded this session — the connector requires interactive OAuth authorization that a non-interactive scheduled session cannot complete. Same gap flagged since September 25. |
+| **Quartr** | **Down** | `search_companies` returned `"error":"subscription_required"` — the connected account (`stockoptionfunds@gmail.com`) has `"currentPlan":"none"`. Unchanged from October 9 through 15. |
+| **Alpha Vantage** | Up, but no narrative capability | `GLOBAL_QUOTE` for AAPL returned live data: $343.46, 2026-10-16, +0.43% vs. previous close ($342.00). But `NEWS_SENTIMENT` was rejected outright — *"This is a premium endpoint... subscribe to any of the premium plans"* — so this key has no news/narrative access at all, and per `CONNECTORS.md` it's hard-capped at **25 requests/day total** regardless. A handful of price points with zero sourced "why" is not enough to build a causal-chain wrap. |
+| **Blockscout** | Up, but budget-limited | Session unlocked; a live `get_block_number` call succeeded (block 26,207,818, chain 1, 2026-10-16 21:33 UTC), but the free session budget is **7 of 8 calls remaining**, and a persistent notice confirms *all Blockscout MCP requests have required a PRO API key since 10/08/2026* — the free budget is a stopgap, not a durable allowance. On-chain only (wallet/contract/transfer data) — no price levels, no news. Not useful alone for a market wrap. |
+
+## Why this stops the brief rather than producing a thin one
+
+A cross-asset wrap in this fund's style is built on causal chains ("X happened because Y, which is why Z moved") with every claim sourced and timestamped. With Bigdata.com's news search down and no other connector providing narrative retrieval, there is no way to source the "why" for any move without either fabricating it from general training knowledge (explicitly forbidden by this task and by `analyst/GUARDRAILS.md`) or publishing bare numbers with no causal context, which isn't the product this briefing is meant to be. The remaining working connectors (Alpha Vantage, Blockscout) can't cover the mandate's breadth either — equities, options, futures, crypto, precious metals, plus macro/rates context — at any meaningful depth: Alpha Vantage's own news endpoint is premium-gated on this key, leaving one bare equity quote with zero narrative, and Blockscout is on-chain-only with a near-exhausted free-call budget now that a PRO key is required.
+
+## Action needed
+
+- **Bigdata.com**: account needs a credit top-up or plan review at [Bigdata.com](https://bigdata.com) — unresolved since October 2, now affecting at least eleven scheduled trading-day sessions.
+- **Twelve Data**: needs interactive OAuth authorization (via the Twelve Data MCP connector settings) — not something this scheduled session can complete on its own.
+- **Quartr**: needs an active Pro subscription on the connected account.
+- **Alpha Vantage**: `NEWS_SENTIMENT` requires a premium plan on the connected key — the free key's narrative capability is zero, not just rate-limited.
+- **Blockscout**: requires a PRO API key for sustained use (as of 2026-10-08) — the free per-session call budget (8 calls, 7 remaining as of today) is not enough to support a watchlist-scale monitoring pass going forward.
+
+No market data, levels, or news claims are presented in this note — per standing instructions, nothing here should be read as a market update.
